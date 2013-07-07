@@ -1,0 +1,186 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dependencies>
+   <includePath signature="/I..\..\..\..\..\Dokumente und Einstellungen\c-lab\Desktop\Programmieren\FlyFi_sd\stm_lib /I..\..\..\..\..\Dokumente und Einstellungen\c-lab\Desktop\Programmieren\FlyFi_sd\stm32vldiscovery /I..\..\..\..\..\Dokumente und Einstellungen\c-lab\Desktop\Programmieren\FlyFi_sd\cmsis /I..\..\..\..\..\Dokumente und Einstellungen\c-lab\Desktop\Programmieren\FlyFi_sd\stm_lib\inc /I..\..\..\..\..\Dokumente und Einstellungen\c-lab\Desktop\Programmieren\FlyFi_sd\sd /I..\..\..\..\..\Dokumente und Einstellungen\c-lab\Desktop\Programmieren\FlyFi_sd\cmsis_boot /I..\..\..\..\..\Dokumente und Einstellungen\c-lab\Desktop\Programmieren /I..\..\..\..\..\Dokumente und Einstellungen\c-lab\Desktop\Programmieren\FlyFi_sd\midi /I..\..\..\..\..\Dokumente und Einstellungen\c-lab\Desktop\Programmieren\FlyFi_sd">
+      <source file="..\..\..\cmsis\core_cm3.h" lastModified="13fb56c3a77">
+      </source>
+      <source file="..\..\..\stm_lib\src\stm32f10x_spi.c" lastModified="13fb56c34d9">
+         <include file="..\..\..\stm_lib\inc\stm32f10x_spi.h"/>
+         <include file="..\..\..\stm_lib\inc\stm32f10x_rcc.h"/>
+      </source>
+      <source file="..\..\..\sd\option\cc949.c" lastModified="13fb56c33cf">
+         <include file="..\..\..\sd\ff.h"/>
+      </source>
+      <source file="..\..\..\sd\option\unicode.c" lastModified="13fb56c33ef">
+         <include file="..\..\..\sd\ff.h"/>
+         <include file="..\..\..\sd\option\cc932.c"/>
+         <include file="..\..\..\sd\option\cc936.c"/>
+         <include file="..\..\..\sd\option\cc949.c"/>
+         <include file="..\..\..\sd\option\cc950.c"/>
+         <include file="..\..\..\sd\option\ccsbcs.c"/>
+      </source>
+      <source file="..\..\..\cmsis\core_cm3.c" lastModified="13fb56c367f">
+      </source>
+      <source file="..\..\..\midi\midiinfo.h" lastModified="13fb4fed0c2">
+      </source>
+      <source file="..\..\..\sd\option\ccsbcs.c" lastModified="13fb56c33df">
+         <include file="..\..\..\sd\ff.h"/>
+      </source>
+      <source file="..\..\..\stm_lib\inc\stm32f10x_rtc.h" lastModified="13fb56c34aa">
+         <include file="..\..\..\cmsis_boot\stm32f10x.h"/>
+      </source>
+      <source file="..\..\..\sd\debug.h" lastModified="13fb56c370c">
+      </source>
+      <source file="..\..\..\stm_lib\inc\stm32f10x_rcc.h" lastModified="13fb56c349b">
+         <include file="..\..\..\cmsis_boot\stm32f10x.h"/>
+      </source>
+      <source file="..\..\..\sd\uart.h" lastModified="13fb56c340e">
+      </source>
+      <source file="..\..\..\stm_lib\inc\stm32f10x_pwr.h" lastModified="13fb56c343d">
+         <include file="..\..\..\cmsis_boot\stm32f10x.h"/>
+      </source>
+      <source file="..\..\..\stm_lib\src\stm32f10x_gpio.c" lastModified="13fb56c34ba">
+         <include file="..\..\..\stm_lib\inc\stm32f10x_gpio.h"/>
+         <include file="..\..\..\stm_lib\inc\stm32f10x_rcc.h"/>
+      </source>
+      <source file="..\..\..\sd\debug.c" lastModified="13fb56c3ab5">
+         <include file="..\..\..\sd\debug.h"/>
+      </source>
+      <source file="..\..\..\cmsis_boot\startup\startup_stm32f10x_md_vl.c" lastModified="13fb56c32a7">
+      </source>
+      <source file="..\..\..\sd\stm32f10x_it.h" lastModified="13fb56c340e">
+         <include file="..\..\..\cmsis_boot\stm32f10x.h"/>
+      </source>
+      <source file="..\..\..\sd\uart.c" lastModified="13fb5713425">
+         <include file="..\..\..\cmsis_boot\stm32f10x.h"/>
+         <include file="..\..\..\stm32vldiscovery\STM32_Discovery.h"/>
+         <include file="..\..\..\sd\debug.h"/>
+         <include file="..\..\..\sd\uart.h"/>
+      </source>
+      <source file="..\..\..\sd\ffconf.h" lastModified="13fb7f5b530">
+      </source>
+      <source file="..\..\..\cmsis_boot\system_stm32f10x.h" lastModified="13fb56c32d5">
+      </source>
+      <source file="..\..\..\midi\midiutil.h" lastModified="13fb4fed0d2">
+         <include file="..\..\..\midi\midiinfo.h"/>
+      </source>
+      <source file="..\..\..\sd\stm32f10x_it.c" lastModified="13fb56c33fe">
+         <include file="..\..\..\sd\stm32f10x_it.h"/>
+         <include file="..\..\..\sd\diskio.h"/>
+      </source>
+      <source file="..\..\..\cmsis_boot\system_stm32f10x.c" lastModified="13fb56c32c6">
+         <include file="..\..\..\cmsis_boot\stm32f10x.h"/>
+      </source>
+      <source file="..\..\..\midi\midiutil.c" lastModified="13fb4fee062">
+         <include file="..\..\..\midi\midifile.h"/>
+         <include file="..\..\..\midi\midiutil.h"/>
+      </source>
+      <source file="..\..\..\stm_lib\inc\stm32f10x_bkp.h" lastModified="13fb56c342d">
+         <include file="..\..\..\cmsis_boot\stm32f10x.h"/>
+      </source>
+      <source file="..\..\..\cmsis_boot\stm32f10x_conf.h" lastModified="13fb56c32c6">
+         <include file="..\..\..\stm_lib\inc\stm32f10x_bkp.h"/>
+         <include file="..\..\..\stm_lib\inc\stm32f10x_gpio.h"/>
+         <include file="..\..\..\stm_lib\inc\stm32f10x_pwr.h"/>
+         <include file="..\..\..\stm_lib\inc\stm32f10x_rcc.h"/>
+         <include file="..\..\..\stm_lib\inc\stm32f10x_rtc.h"/>
+         <include file="..\..\..\stm_lib\inc\stm32f10x_spi.h"/>
+         <include file="..\..\..\stm_lib\inc\stm32f10x_usart.h"/>
+      </source>
+      <source file="..\..\..\sd\diskio.h" lastModified="13fb56c3333">
+         <include file="..\..\..\sd\integer.h"/>
+      </source>
+      <source file="..\..\..\stm_lib\inc\stm32f10x_usart.h" lastModified="13fb56c34ba">
+         <include file="..\..\..\cmsis_boot\stm32f10x.h"/>
+      </source>
+      <source file="..\..\..\sd\option\syscall.c" lastModified="13fb56c3bbf">
+         <include file="..\..\..\sd\ff.h"/>
+      </source>
+      <source file="..\..\..\sd\fattime.h" lastModified="13fb56c3343">
+         <include file="..\..\..\sd\integer.h"/>
+      </source>
+      <source file="..\..\..\sd\option\cc932.c" lastModified="13fb56c3391">
+         <include file="..\..\..\sd\ff.h"/>
+      </source>
+      <source file="..\..\..\stm_lib\src\stm32f10x_usart.c" lastModified="13fb56c34d9">
+         <include file="..\..\..\stm_lib\inc\stm32f10x_usart.h"/>
+         <include file="..\..\..\stm_lib\inc\stm32f10x_rcc.h"/>
+      </source>
+      <source file="..\..\..\stm_lib\inc\stm32f10x_spi.h" lastModified="13fb56c34aa">
+         <include file="..\..\..\cmsis_boot\stm32f10x.h"/>
+      </source>
+      <source file="..\..\..\sd\fattime.c" lastModified="13fb56c3333">
+         <include file="..\..\..\sd\integer.h"/>
+         <include file="..\..\..\sd\fattime.h"/>
+      </source>
+      <source file="..\..\..\sd\option\cc950.c" lastModified="13fb56c33df">
+         <include file="..\..\..\sd\ff.h"/>
+      </source>
+      <source file="..\..\..\stdio\printf.c" lastModified="13fb56c3bee">
+      </source>
+      <source file="..\..\..\midi\midifile.h" lastModified="13fb8109977">
+         <include file="..\..\..\sd\ff.h"/>
+         <include file="..\..\..\midi\midiinfo.h"/>
+      </source>
+      <source file="..\..\..\syscalls\syscalls.c" lastModified="13fb56c4489">
+      </source>
+      <source file="..\..\..\midi\midifile.c" lastModified="13fb8157db9">
+         <include file="..\..\..\midi\midifile.h"/>
+         <include file="..\..\..\sd\ff.h"/>
+      </source>
+      <source file="..\..\..\main.c" lastModified="13fb813d5d5">
+         <include file="..\..\..\cmsis_boot\stm32f10x.h"/>
+         <include file="..\..\..\stm32vldiscovery\STM32_Discovery.h"/>
+         <include file="..\..\..\sd\debug.h"/>
+         <include file="..\..\..\sd\uart.h"/>
+         <include file="..\..\..\sd\diskio.h"/>
+         <include file="..\..\..\sd\ff.h"/>
+         <include file="..\..\..\midi\midifile.h"/>
+      </source>
+      <source file="..\..\..\stm_lib\src\stm32f10x_rtc.c" lastModified="13fb56c34d9">
+         <include file="..\..\..\stm_lib\inc\stm32f10x_rtc.h"/>
+      </source>
+      <source file="..\..\..\sd\ff.h" lastModified="13fb56c3352">
+         <include file="..\..\..\sd\integer.h"/>
+         <include file="..\..\..\sd\ffconf.h"/>
+      </source>
+      <source file="..\..\..\stm_lib\src\stm32f10x_rcc.c" lastModified="13fb56c34c9">
+         <include file="..\..\..\stm_lib\inc\stm32f10x_rcc.h"/>
+      </source>
+      <source file="..\..\..\cmsis_boot\stm32f10x.h" lastModified="13fb56c369e">
+         <include file="..\..\..\cmsis\core_cm3.h"/>
+         <include file="..\..\..\cmsis_boot\system_stm32f10x.h"/>
+         <include file="..\..\..\cmsis_boot\stm32f10x_conf.h"/>
+      </source>
+      <source file="..\..\..\stm_lib\src\stm32f10x_pwr.c" lastModified="13fb56c34c9">
+         <include file="..\..\..\stm_lib\inc\stm32f10x_pwr.h"/>
+         <include file="..\..\..\stm_lib\inc\stm32f10x_rcc.h"/>
+      </source>
+      <source file="..\..\..\sd\ff.c" lastModified="13fb56c373a">
+         <include file="..\..\..\sd\ff.h"/>
+         <include file="..\..\..\sd\diskio.h"/>
+      </source>
+      <source file="..\..\..\sd\integer.h" lastModified="13fb56c3b32">
+      </source>
+      <source file="..\..\..\stm32vldiscovery\STM32_Discovery.h" lastModified="13fb56c342d">
+         <include file="..\..\..\cmsis_boot\stm32f10x.h"/>
+      </source>
+      <source file="..\..\..\stm_lib\src\stm32f10x_bkp.c" lastModified="13fb56c34ba">
+         <include file="..\..\..\stm_lib\inc\stm32f10x_bkp.h"/>
+         <include file="..\..\..\stm_lib\inc\stm32f10x_rcc.h"/>
+      </source>
+      <source file="..\..\..\stm32vldiscovery\STM32_Discovery.c" lastModified="13fb56c341e">
+         <include file="..\..\..\stm32vldiscovery\STM32_Discovery.h"/>
+      </source>
+      <source file="..\..\..\stm_lib\inc\stm32f10x_gpio.h" lastModified="13fb56c343d">
+         <include file="..\..\..\cmsis_boot\stm32f10x.h"/>
+      </source>
+      <source file="..\..\..\sd\sd_spi_stm32.c" lastModified="13fb56c33ef">
+         <include file="..\..\..\cmsis_boot\stm32f10x.h"/>
+         <include file="..\..\..\sd\ffconf.h"/>
+         <include file="..\..\..\sd\diskio.h"/>
+      </source>
+      <source file="..\..\..\sd\option\cc936.c" lastModified="13fb56c33c0">
+         <include file="..\..\..\sd\ff.h"/>
+      </source>
+   </includePath>
+</dependencies>

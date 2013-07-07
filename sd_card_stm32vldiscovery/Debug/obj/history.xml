@@ -1,0 +1,77 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<history>
+   <processor signature="arm-none-eabi-gcc noversion nomachine -mcpu=cortex-m3 -mthumb -Wall -ffunction-sections -g -O0 -c -DSTM32F100RB -DSTM32F10X_MD_VL -DUSE_STDPERIPH_DRIVER -D__ASSEMBLY__ -I..\..\..\..\..\Dokumente und Einstellungen\c-lab\Desktop\Programmieren\FlyFi_sd\stm_lib -I..\..\..\..\..\Dokumente und Einstellungen\c-lab\Desktop\Programmieren\FlyFi_sd\stm32vldiscovery -I..\..\..\..\..\Dokumente und Einstellungen\c-lab\Desktop\Programmieren\FlyFi_sd\cmsis -I..\..\..\..\..\Dokumente und Einstellungen\c-lab\Desktop\Programmieren\FlyFi_sd\stm_lib\inc -I..\..\..\..\..\Dokumente und Einstellungen\c-lab\Desktop\Programmieren\FlyFi_sd\sd -I..\..\..\..\..\Dokumente und Einstellungen\c-lab\Desktop\Programmieren\FlyFi_sd\cmsis_boot -I..\..\..\..\..\Dokumente und Einstellungen\c-lab\Desktop\Programmieren -I..\..\..\..\..\Dokumente und Einstellungen\c-lab\Desktop\Programmieren\FlyFi_sd\midi -I..\..\..\..\..\Dokumente und Einstellungen\c-lab\Desktop\Programmieren\FlyFi_sd">
+      <target file="stm32f10x_spi.o" lastModified="13fb80108b9">
+         <source file="..\..\..\stm_lib\src\stm32f10x_spi.c" lastModified="13fb56c34d9"/>
+      </target>
+      <target file="stm32f10x_rcc.o" lastModified="13fb80101f3">
+         <source file="..\..\..\stm_lib\src\stm32f10x_rcc.c" lastModified="13fb56c34c9"/>
+      </target>
+      <target file="core_cm3.o" lastModified="13fb800f698">
+         <source file="..\..\..\cmsis\core_cm3.c" lastModified="13fb56c3297"/>
+      </target>
+      <target file="stm32f10x_it.o" lastModified="13fb801051f">
+         <source file="..\..\..\sd\stm32f10x_it.c" lastModified="13fb56c33fe"/>
+      </target>
+      <target file="stm32f10x_pwr.o" lastModified="13fb800f958">
+         <source file="..\..\..\stm_lib\src\stm32f10x_pwr.c" lastModified="13fb56c34c9"/>
+      </target>
+      <target file="midifile.o" lastModified="13fb8157ef1">
+         <source file="..\..\..\midi\midifile.c" lastModified="13fb8157201"/>
+      </target>
+      <target file="printf.o" lastModified="13fb8010108">
+         <source file="..\..\..\stdio\printf.c" lastModified="13fb56c341e"/>
+      </target>
+      <target file="STM32_Discovery.o" lastModified="13fb800f764">
+         <source file="..\..\..\stm32vldiscovery\STM32_Discovery.c" lastModified="13fb56c341e"/>
+      </target>
+      <target file="midiutil.o" lastModified="13fb8120dc7">
+         <source file="..\..\..\midi\midiutil.c" lastModified="13fb4fed0c2"/>
+      </target>
+      <target file="fattime.o" lastModified="13fb80108f8">
+         <source file="..\..\..\sd\fattime.c" lastModified="13fb56c3333"/>
+      </target>
+      <target file="debug.o" lastModified="13fb801057d">
+         <source file="..\..\..\sd\debug.c" lastModified="13fb56c32e5"/>
+      </target>
+      <target file="unicode.o" lastModified="13fb800f570">
+         <source file="..\..\..\sd\option\unicode.c" lastModified="13fb56c33ef"/>
+      </target>
+      <target file="stm32f10x_bkp.o" lastModified="13fb8010a9d">
+         <source file="..\..\..\stm_lib\src\stm32f10x_bkp.c" lastModified="13fb56c34ba"/>
+      </target>
+      <target file="uart.o" lastModified="13fb800f8bb">
+         <source file="..\..\..\sd\uart.c" lastModified="13fb5713425"/>
+      </target>
+      <target file="stm32f10x_gpio.o" lastModified="13fb800fa13">
+         <source file="..\..\..\stm_lib\src\stm32f10x_gpio.c" lastModified="13fb56c34ba"/>
+      </target>
+      <target file="stm32f10x_rtc.o" lastModified="13fb800f272">
+         <source file="..\..\..\stm_lib\src\stm32f10x_rtc.c" lastModified="13fb56c34d9"/>
+      </target>
+      <target file="system_stm32f10x.o" lastModified="13fb800f82f">
+         <source file="..\..\..\cmsis_boot\system_stm32f10x.c" lastModified="13fb56c32c6"/>
+      </target>
+      <target file="sd_spi_stm32.o" lastModified="13fb8010a01">
+         <source file="..\..\..\sd\sd_spi_stm32.c" lastModified="13fb56c33ef"/>
+      </target>
+      <target file="syscalls.o" lastModified="13fb8010399">
+         <source file="..\..\..\syscalls\syscalls.c" lastModified="13fb56c34e9"/>
+      </target>
+      <target file="syscall.o" lastModified="13fb801031c">
+         <source file="..\..\..\sd\option\syscall.c" lastModified="13fb56c33ef"/>
+      </target>
+      <target file="ff.o" lastModified="13fb80107ee">
+         <source file="..\..\..\sd\ff.c" lastModified="13fb56c3352"/>
+      </target>
+      <target file="startup_stm32f10x_md_vl.o" lastModified="13fb800f5ed">
+         <source file="..\..\..\cmsis_boot\startup\startup_stm32f10x_md_vl.c" lastModified="13fb56c32a7"/>
+      </target>
+      <target file="main.o" lastModified="13fb813fb8e">
+         <source file="..\..\..\main.c" lastModified="13fb813c24d"/>
+      </target>
+      <target file="stm32f10x_usart.o" lastModified="13fb80102cd">
+         <source file="..\..\..\stm_lib\src\stm32f10x_usart.c" lastModified="13fb56c34d9"/>
+      </target>
+   </processor>
+</history>
