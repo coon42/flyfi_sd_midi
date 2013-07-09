@@ -29,5 +29,8 @@
 #define UARTd USART2
 
 void InitializeUarts(void);
+unsigned char USART_getc(USART_TypeDef* USARTx);
+uint32_t USART_recv_dword(USART_TypeDef* USARTx);
+
 
 #endif

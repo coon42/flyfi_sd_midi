@@ -24,7 +24,7 @@ void PrintChar(char c)
 }
 
 /** Maximum string size allowed (in bytes). */
-#define MAX_STRING_SIZE         512
+#define MAX_STRING_SIZE         256
 
 
 /** Required for proper compilation. */

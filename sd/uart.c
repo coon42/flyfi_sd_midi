@@ -18,19 +18,15 @@
  ********************************************************************/
 
 //#include <stddef.h>
-//#include <stdio.h>
 //#include <sys/unistd.h>
+#include <stdio.h>
 #include "stm32f10x.h"
-#include "STM32_Discovery.h"
-#include "debug.h"
 #include "uart.h"
 
 //
 // UARTx is used by printf
-// UARTd is used by debug output (redirected stderr)
-//
 
-void InitializeUarts(void) {
+void InitializeUart(uint32_t baud_rate) {
 	USART_InitTypeDef USART_InitStructure;
 	GPIO_InitTypeDef GPIO_InitStructure;
 
@@ -44,13 +40,8 @@ void InitializeUarts(void) {
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-    // Configure USART1 and USART2 Rx as input floating
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10 | GPIO_Pin_3;
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
-
     // Prepare parameters first - traditional 115.2 / 8b / no parity, no flow control
-    USART_InitStructure.USART_BaudRate = 9600; // this is fast but sometimes you get transmission errors
+    USART_InitStructure.USART_BaudRate = baud_rate; // this is fast but sometimes you get transmission errors
     USART_InitStructure.USART_WordLength = USART_WordLength_8b;
     USART_InitStructure.USART_StopBits = USART_StopBits_1;
     USART_InitStructure.USART_Parity = USART_Parity_No;
@@ -60,8 +51,40 @@ void InitializeUarts(void) {
     // Configure and enable UARTx
     USART_Init(UARTx, &USART_InitStructure);
     USART_Cmd(UARTx, ENABLE);
+}
 
-    // Configure and enable UARTd
-    USART_Init(UARTd, &USART_InitStructure);
-    USART_Cmd(UARTd, ENABLE);
+unsigned char USART_getc(USART_TypeDef* USARTx)
+{
+	// wait until data register is empty
+	/* Wait until the data is ready to be received. */
+	while ((USARTx->SR & USART_SR_RXNE) == 0);
+
+	// read RX data, combine with DR mask (we only accept a max of 9 Bits)
+	return USARTx->DR & 0x1FF;
+}
+
+// This will print on usart 1 (the original function has been commented out in printf.c !!!
+int fputc(int ch, FILE * f)
+{
+	/* Wait until transmit finishes */
+	while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET);
+
+	/* Transmit the character using USART1 */
+	USART_SendData(USART1, (u8) ch);
+
+
+	return ch;
+}
+
+// receives an 32 bit integer from serial port. (little endian)
+uint32_t USART_recv_dword(USART_TypeDef* USARTx)
+{
+	uint32_t i, result = 0;
+	for(i = 0; i < 4; i++)
+	{
+		uint32_t recv = USART_getc(USART1) << (i * 8);
+		result |= recv;
+	}
+
+	return result;
 }

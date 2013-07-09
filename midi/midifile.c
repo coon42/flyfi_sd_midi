@@ -21,29 +21,35 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-//#include <stdio.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 #ifndef  __APPLE__
 #include <malloc.h>
 #endif
 #include "midifile.h"
+#include "diskio.h"
 #include "ff.h"
 
-FIL* g_file_ptr;
-BYTE *pFileBase;
+static FIL g_file;
+static FATFS Fatfs[1];		/* File system object for each logical drive */
+static DWORD acc_size;
+static WORD acc_files, acc_dirs;
+static FILINFO Finfo;
+static BYTE Buff[1 * 512] __attribute__ ((aligned (4))) ;		/* Working buffer */
+static char Lfname[128];
 
-void read_mem_from_pos(void* dst, DWORD pos, DWORD length)
+
+static void read_mem_from_pos(void* dst, DWORD pos, DWORD length)
 {
-//	fseek(g_file_ptr, pos, SEEK_SET);
-//	fread(dst, 1, length, g_file_ptr);
 	UINT br;
 
-	f_lseek (g_file_ptr, pos);
-	f_read (g_file_ptr, dst, length, &br);
+	f_lseek (&g_file, pos);
+	f_read (&g_file, dst, length, &br);
 }
 
-DWORD read_dword_value_from_pos(DWORD pos)
+static DWORD read_dword_value_from_pos(DWORD pos)
 {
 	DWORD ret = 0;
 	read_mem_from_pos(&ret, pos, sizeof(DWORD));
@@ -51,7 +57,7 @@ DWORD read_dword_value_from_pos(DWORD pos)
 	return ret;
 }
 
-WORD read_word_value_from_pos(DWORD pos)
+static WORD read_word_value_from_pos(DWORD pos)
 {
 	WORD ret = 0;
 	read_mem_from_pos(&ret, pos, sizeof(WORD));
@@ -59,7 +65,7 @@ WORD read_word_value_from_pos(DWORD pos)
 	return ret;
 }
 
-BYTE read_byte_value_from_pos(DWORD pos)
+static BYTE read_byte_value_from_pos(DWORD pos)
 {
 	BYTE ret = 0;
 	read_mem_from_pos(&ret, pos, sizeof(BYTE));
@@ -67,7 +73,7 @@ BYTE read_byte_value_from_pos(DWORD pos)
 	return ret;
 }
 
-void read_string_from_pos_s(void* dst, DWORD pos, DWORD max_length)
+static void read_string_from_pos_s(void* dst, DWORD pos, DWORD max_length)
 {
 	read_mem_from_pos(dst, pos, max_length - 1);
 	((BYTE*)dst)[max_length] = '\0'; // if the input sting is too long, just cut it.
@@ -115,66 +121,6 @@ static BOOL _midiValidateTrack(const _MIDI_FILE *pMF, int iTrack)
 	return TRUE;
 }
 
-static BYTE *_midiWriteVarLen(BYTE *ptr, int n)
-{
-register long buffer;
-register long value=n;
-
-	buffer = value & 0x7f;
-	while ((value >>= 7) > 0)
-		{
-		buffer <<= 8;
-		buffer |= 0x80;
-		buffer += (value & 0x7f);
-		}
-
-	while (TRUE)
-		{
-		*ptr++ = (BYTE)buffer;
-		if (buffer & 0x80)
-			buffer >>= 8;
-		else
-			break;
-		}
-	
-	return(ptr);
-}
-
-/* Return a ptr to valid block of memory to store a message
-** of up to sz_reqd bytes 
-*/
-
-/*
-static BYTE *_midiGetPtr(_MIDI_FILE *pMF, int iTrack, int sz_reqd)
-{
-const DWORD mem_sz_inc = 8092;	// arbitary
-BYTE *ptr;
-int curr_offset;
-MIDI_FILE_TRACK *pTrack = &pMF->Track[iTrack];
-
-	ptr = pTrack->ptr;
-	if (ptr == NULL || ptr+sz_reqd > pTrack->pEnd)		// need more RAM!
-		{
-		curr_offset = ptr-pTrack->pBase;
-		if ((ptr = (BYTE *)realloc(pTrack->pBase, mem_sz_inc+pTrack->iBlockSize)))
-			{
-			pTrack->pBase = ptr;
-			pTrack->iBlockSize += mem_sz_inc;
-			pTrack->pEnd = ptr+pTrack->iBlockSize;
-			// Move new ptr to continue data entry:
-			pTrack->ptr = ptr+curr_offset;
-			ptr += curr_offset;
-			}
-		else
-			{
-			// NO MEMORY LEFT
-			return NULL;
-			}
-		}
-
-	return ptr;
-}
-*/
 
 static int _midiGetLength(int ppqn, int iNoteLen, BOOL bOverride)
 {
@@ -242,58 +188,8 @@ int length = ppqn;
 	return length;
 }
 
-/*
-** midiFile* Functions
-*/
 
-/*
-_MIDI_FILE  *midiFileCreate(const char *pFilename, BOOL bOverwriteIfExists)
-{
-_MIDI_FILE *pMF = (_MIDI_FILE *)malloc(sizeof(_MIDI_FILE));
-int i;
-
-	if (!pMF)							return NULL;
-	
-	if (!bOverwriteIfExists)
-		{
-		if ((pMF->pFile = fopen(pFilename, "r")))
-			{
-			fclose(pMF->pFile);
-			free(pMF);
-			return NULL;
-			}
-		}
-	
-	if ((pMF->pFile = fopen(pFilename, "wb+")))
-		{} //empty
-	else
-		{
-		free((void *)pMF);
-		return NULL;
-		}
-	
-	pMF->bOpenForWriting = TRUE;
-	pMF->Header.PPQN = MIDI_PPQN_DEFAULT;
-	pMF->Header.iVersion = MIDI_VERSION_DEFAULT;
-	
-	for(i=0;i<MAX_MIDI_TRACKS;++i)
-		{
-		pMF->Track[i].pos = 0;
-		pMF->Track[i].ptr = NULL;
-		pMF->Track[i].pBase = NULL;
-		pMF->Track[i].pEnd = NULL;
-		pMF->Track[i].iBlockSize = 0;
-		pMF->Track[i].dt = 0;
-		pMF->Track[i].iDefaultChannel = (BYTE)(i & 0xf);
-		
-		memset(pMF->Track[i].LastNote, '\0', sizeof(pMF->Track[i].LastNote));
-		}
-	
-	return (_MIDI_FILE *)pMF;
-}
-*/
-
-int		midiFileSetTracksDefaultChannel(_MIDI_FILE *_pMF, int iTrack, int iChannel)
+static int		midiFileSetTracksDefaultChannel(_MIDI_FILE *_pMF, int iTrack, int iChannel)
 {
 int prev;
 
@@ -310,7 +206,7 @@ int prev;
 	return prev;
 }
 
-int		midiFileGetTracksDefaultChannel(const _MIDI_FILE *_pMF, int iTrack)
+static int		midiFileGetTracksDefaultChannel(const _MIDI_FILE *_pMF, int iTrack)
 {
 	_VAR_CAST;
 	if (!IsFilePtrValid(pMF))				return 0;
@@ -319,7 +215,7 @@ int		midiFileGetTracksDefaultChannel(const _MIDI_FILE *_pMF, int iTrack)
 	return pMF->Track[iTrack].iDefaultChannel+1;
 }
 
-int		midiFileSetPPQN(_MIDI_FILE *_pMF, int PPQN)
+static int		midiFileSetPPQN(_MIDI_FILE *_pMF, int PPQN)
 {
 int prev;
 
@@ -330,14 +226,14 @@ int prev;
 	return prev;
 }
 
-int		midiFileGetPPQN(const _MIDI_FILE *_pMF)
+static int		midiFileGetPPQN(const _MIDI_FILE *_pMF)
 {
 	_VAR_CAST;
 	if (!IsFilePtrValid(pMF))				return MIDI_PPQN_DEFAULT;
 	return (int)pMF->Header.PPQN;
 }
 
-int		midiFileSetVersion(_MIDI_FILE *_pMF, int iVersion)
+static int		midiFileSetVersion(_MIDI_FILE *_pMF, int iVersion)
 {
 int prev;
 
@@ -349,7 +245,7 @@ int prev;
 	return prev;
 }
 
-int			midiFileGetVersion(const _MIDI_FILE *_pMF)
+static int			midiFileGetVersion(const _MIDI_FILE *_pMF)
 {
 	_VAR_CAST;
 	if (!IsFilePtrValid(pMF))				return MIDI_VERSION_DEFAULT;
@@ -357,24 +253,150 @@ int			midiFileGetVersion(const _MIDI_FILE *_pMF)
 }
 
 
+//
+//--- Helpers for FAT support
+//
 
-void midiFileOpen( FIL* fil, _MIDI_FILE* pMF, const char *pFilename, BOOL* open_success )
+static
+void put_rc (FRESULT rc)
+{
+	const char *p;
+	static const char str[] =
+		"OK\0" "NOT_READY\0" "NO_FILE\0" "FR_NO_PATH\0" "INVALID_NAME\0" "INVALID_DRIVE\0"
+		"DENIED\0" "EXIST\0" "RW_ERROR\0" "WRITE_PROTECTED\0" "NOT_ENABLED\0"
+		"NO_FILESYSTEM\0" "INVALID_OBJECT\0" "MKFS_ABORTED\0";
+	FRESULT i;
+
+	for (p = str, i = 0; i != rc && *p; i++) {
+		while(*p++);
+	}
+	printf("rc=%u FR_%s\n", (UINT)rc, p);
+}
+
+static
+FRESULT scan_files (char* path)
+{
+	DIR dirs;
+	FRESULT res;
+	BYTE i;
+	char *fn;
+
+
+	if ((res = f_opendir(&dirs, path)) == FR_OK) {
+		i = strlen(path);
+		while (((res = f_readdir(&dirs, &Finfo)) == FR_OK) && Finfo.fname[0]) {
+#if _USE_LFN
+				fn = *Finfo.lfname ? Finfo.lfname : Finfo.fname;
+#else
+				fn = Finfo.fname;
+#endif
+			if (Finfo.fattrib & AM_DIR) {
+				acc_dirs++;
+				*(path+i) = '/'; strcpy(path+i+1, fn);
+				printf("%s\r\n", path);
+
+				res = scan_files(path);
+				*(path+i) = '\0';
+
+				if (res != FR_OK) break;
+			} else {
+
+				printf("%s/%s - %d Bytes\r\n", path, fn, Finfo.fsize);
+
+				acc_files++;
+				acc_size += Finfo.fsize;
+			}
+		}
+	}
+
+	return res;
+}
+
+void mount_sd_card()
+{
+	// SD Card Test
+	//
+	// Disk initialization - this sets SPI1 to correct mode and initializes the SD/MMC card
+	//
+	uint32_t dw;
+	uint16_t w;
+	uint8_t b;
+
+
+	if(disk_initialize(0) & STA_NOINIT)
+		printf("No memory card found\r\n");
+	 else {
+		disk_ioctl(0, GET_SECTOR_COUNT, &dw);
+		disk_ioctl(0, MMC_GET_TYPE, &b);
+		if(b & CT_MMC) {
+			printf("MMC");
+		} else if(b & CT_SD1) {
+			printf("SD 1.0");
+		} else if(b & CT_SD2) {
+			printf("SD 2.0");
+		} else {
+			printf("unknown");
+		}
+		printf(" card found, %d MB\r\n", dw >> 11);
+	}
+
+
+	long p;
+	FRESULT res;
+	f_mount(0, &Fatfs[0]);
+
+	FATFS *fs;				/* Pointer to file system object */
+	res = f_getfree("", (DWORD*)&p, &fs);
+	if(res) {
+		put_rc(res);
+	} else {
+		printf("FAT type = %d (%s)\nBytes/Cluster = %d\nNumber of FATs = %d\n"
+				"Root DIR entries = %d\nSectors/FAT = %d\nNumber of clusters = %d\n"
+				"FAT start (lba) = %d\nDIR start (lba,clustor) = %d\nData start (lba) = %d\n\n",
+				(WORD)fs->fs_type,
+				(fs->fs_type==FS_FAT12) ? "FAT12" : (fs->fs_type==FS_FAT16) ? "FAT16" : "FAT32",
+				(DWORD)fs->csize * 512, (WORD)fs->n_fats,
+				fs->n_rootdir, fs->fsize, (DWORD)fs->n_fatent - 2,
+				fs->fatbase, fs->dirbase, fs->database
+		);
+
+	}
+
+
+
+	acc_size = acc_files = acc_dirs = 0;
+
+
+#if _USE_LFN
+	Finfo.lfname = Lfname;
+	Finfo.lfsize = sizeof(Lfname);
+#endif
+
+	Buff[0] = 0;
+	res = scan_files(Buff);
+	if(res) {
+		put_rc(res);
+	} else {
+		printf("%d files, %d bytes.\n%d folders.\n"
+				"%d MB total disk space.\n%d MB available.\n",
+				acc_files, acc_size, acc_dirs,
+				(fs->n_fatent - 2) * (fs->csize / 2) / 1024, p * (fs->csize / 2) / 1024
+
+		);
+	}
+}
+
+void midiFileOpen( _MIDI_FILE* pMF, const char *pFilename, BOOL* open_success )
 {
 	DWORD ptr2;
 	BOOL bValidFile = FALSE;
-	long size;
 	BYTE magic[4];
 
-	//FRESULT res = f_open (&g_file_ptr, pFilename, FA_READ);
-	g_file_ptr = fil;
+	FRESULT res = f_open (&g_file, pFilename, FA_READ);
 
-	if(g_file_ptr)
+
+	if(res == FR_OK)
 	{
-		// get file size
-		//fseek(g_file_ptr, 0L, SEEK_END);
-		//size = ftell(g_file_ptr);
-		size = g_file_ptr->fsize;
-
 		pMF->ptr2 = 0;
 		ptr2 = pMF->ptr2;
 		read_mem_from_pos(magic, ptr2, 4); // read magic sequence
@@ -392,7 +414,7 @@ void midiFileOpen( FIL* fil, _MIDI_FILE* pMF, const char *pFilename, BOOL* open_
 			wData2 = read_word_value_from_pos(ptr2 + 8);
 			pMF->Header.iVersion = (WORD)SWAP_WORD(wData2);
 					
-			wData2 = wData2 = read_word_value_from_pos(ptr2 + 10);
+			wData2 = read_word_value_from_pos(ptr2 + 10);
 			pMF->Header.iNumTracks = (WORD)SWAP_WORD(wData2);
 					
 			wData2 = read_word_value_from_pos(ptr2 + 12);
@@ -444,81 +466,8 @@ MIDI_END_POINT *p2 = (MIDI_END_POINT *)e2;
 	return p1->iEndPos-p2->iEndPos;
 }
 
-/*
-BOOL	midiFileFlushTrack(_MIDI_FILE *_pMF, int iTrack, BOOL bFlushToEnd, DWORD dwEndTimePos)
-{
-int sz;
-BYTE *ptr;
-MIDI_END_POINT *pEndPoints;
-int num, i, mx_pts;
-BOOL bNoChanges = TRUE;
 
-	_VAR_CAST;
-	if (!IsFilePtrValid(pMF))				return FALSE;
-	if (!_midiValidateTrack(pMF, iTrack))	return FALSE;
-	sz = sizeof(pMF->Track[0].LastNote)/sizeof(pMF->Track[0].LastNote[0]);
-
-	//** Flush all
-
-	pEndPoints = (MIDI_END_POINT *)malloc(sz * sizeof(MIDI_END_POINT));
-	mx_pts = 0;
-	for(i=0;i<sz;++i)
-		if (pMF->Track[iTrack].LastNote[i].valid)
-			{
-			pEndPoints[mx_pts].iIdx = i;
-			pEndPoints[mx_pts].iEndPos = pMF->Track[iTrack].LastNote[i].end_pos;
-			mx_pts++;
-			}
-	
-	if (bFlushToEnd)
-		{
-		if (mx_pts)
-			dwEndTimePos = pEndPoints[mx_pts-1].iEndPos;
-		else
-			dwEndTimePos = pMF->Track[iTrack].pos;
-		}
-	
-	if (mx_pts)
-		{
-		// Sort, smallest first, and add the note off msgs
-		qsort(pEndPoints, mx_pts, sizeof(MIDI_END_POINT), qs_cmp_pEndPoints);
-		
-		i = 0;
-		while ((dwEndTimePos >= (DWORD)pEndPoints[i].iEndPos || bFlushToEnd) && i<mx_pts)
-			{
-			ptr = _midiGetPtr(pMF, iTrack, DT_DEF);
-			if (!ptr)
-				return FALSE;
-			
-			num = pEndPoints[i].iIdx;		// get 'LastNote' index
-			
-			ptr = _midiWriteVarLen(ptr, pMF->Track[iTrack].LastNote[num].end_pos - pMF->Track[iTrack].pos);
-			// msgNoteOn  msgNoteOff
-			*ptr++ = (BYTE)(msgNoteOff | pMF->Track[iTrack].LastNote[num].chn);
-			*ptr++ = pMF->Track[iTrack].LastNote[num].note;
-			*ptr++ = 0;
-			
-			pMF->Track[iTrack].LastNote[num].valid = FALSE;
-			pMF->Track[iTrack].pos = pMF->Track[iTrack].LastNote[num].end_pos;
-			
-			pMF->Track[iTrack].ptr = ptr;
-			
-			++i;
-			bNoChanges = FALSE;
-			}
-		}
-	
-	free((void *)pEndPoints);
-
-	// Re-calc current position
-
-	pMF->Track[iTrack].dt = dwEndTimePos - pMF->Track[iTrack].pos;
-	
-	return TRUE;
-}
-*/
-
-BOOL	midiFileSyncTracks(_MIDI_FILE *_pMF, int iTrack1, int iTrack2)
+static BOOL	midiFileSyncTracks(_MIDI_FILE *_pMF, int iTrack1, int iTrack2)
 {
 int p1, p2;
 
@@ -537,80 +486,11 @@ int p1, p2;
 }
 
 
-BOOL	midiFileClose(_MIDI_FILE *_pMF)
+static BOOL	midiFileClose(_MIDI_FILE *_pMF)
 {
 	_VAR_CAST;
 	if (!IsFilePtrValid(pMF))			return FALSE;
 
-	/*
-	if (pMF->bOpenForWriting)	
-		{
-		WORD iNumTracks = 0;
-		WORD wTest = 256;
-		BOOL bSwap = FALSE;
-		int i;
-
-		// Intel processor style-endians need byte swap :(
-		if (*((BYTE *)&wTest) == 0)
-			bSwap = TRUE;
-
-		// Flush our bufferss
-		for(i=0;i<MAX_MIDI_TRACKS;++i)
-			{
-			if (pMF->Track[i].ptr)
-				{
-				midiSongAddEndSequence(pMF, i);
-				midiFileFlushTrack(pMF, i, TRUE, 0);
-				iNumTracks++;
-				}
-			}
-
-		// Header
-		{
-		const BYTE mthd[4] = {'M', 'T', 'h', 'd'};
-		DWORD dwData;
-		WORD wData;
-		WORD version, PPQN;
-
-			fwrite(mthd, sizeof(BYTE), 4, pMF->pFile);
-			dwData = 6;
-			if (bSwap)	dwData = SWAP_DWORD(dwData);
-			fwrite(&dwData, sizeof(DWORD), 1, pMF->pFile);
-
-			wData = (WORD)(iNumTracks==1?pMF->Header.iVersion:1);
-			if (bSwap)	version = SWAP_WORD(wData); else version = (WORD)wData;
-			if (bSwap)	iNumTracks = SWAP_WORD(iNumTracks);
-			wData = pMF->Header.PPQN;
-			if (bSwap)	PPQN = SWAP_WORD(wData); else PPQN = wData;
-			fwrite(&version, sizeof(WORD), 1, pMF->pFile);
-			fwrite(&iNumTracks, sizeof(WORD), 1, pMF->pFile);
-			fwrite(&PPQN, sizeof(WORD), 1, pMF->pFile);
-		}
-
-		// Track data
-		for(i=0;i<MAX_MIDI_TRACKS;++i)
-			if (pMF->Track[i].ptr)
-				{
-				const BYTE mtrk[4] = {'M', 'T', 'r', 'k'};
-				DWORD sz, dwData;
-
-				// Write track header
-				fwrite(&mtrk, sizeof(BYTE), 4, pMF->pFile);
-
-				// Write data size
-				sz = dwData = (int)(pMF->Track[i].ptr - pMF->Track[i].pBase);
-				if (bSwap)	sz = SWAP_DWORD(sz);
-				fwrite(&sz, sizeof(DWORD), 1, pMF->pFile);
-
-				// Write data
-				fwrite(pMF->Track[i].pBase, sizeof(BYTE), dwData, pMF->pFile);
-				
-				// Free memory
-//				free((void *)pMF->Track[i].pBase);
-				}
-
-		}
-	*/
 
 	if (pMF->pFile)
 		return fclose(pMF->pFile)?FALSE:TRUE;
@@ -618,331 +498,6 @@ BOOL	midiFileClose(_MIDI_FILE *_pMF)
 	return TRUE;
 }
 
-
-
-// midiSong* Functions
-/*
-BOOL	midiSongAddSMPTEOffset(_MIDI_FILE *_pMF, int iTrack, int iHours, int iMins, int iSecs, int iFrames, int iFFrames)
-{
-static BYTE tmp[] = {msgMetaEvent, metaSMPTEOffset, 0x05, 0,0,0,0,0};
-
-	_VAR_CAST;
-	if (!IsFilePtrValid(pMF))				return FALSE;
-	if (!IsTrackValid(iTrack))				return FALSE;
-
-	if (iMins<0 || iMins>59)		iMins=0;
-	if (iSecs<0 || iSecs>59)		iSecs=0;
-	if (iFrames<0 || iFrames>24)	iFrames=0;
-
-	tmp[3] = (BYTE)iHours;
-	tmp[4] = (BYTE)iMins;
-	tmp[5] = (BYTE)iSecs;
-	tmp[6] = (BYTE)iFrames;
-	tmp[7] = (BYTE)iFFrames;
-	return midiTrackAddRaw(pMF, iTrack, sizeof(tmp), tmp, FALSE, 0);
-}
-
-
-BOOL	midiSongAddSimpleTimeSig(_MIDI_FILE *_pMF, int iTrack, int iNom, int iDenom)
-{
-	return midiSongAddTimeSig(_pMF, iTrack, iNom, iDenom, 24, 8);
-}
-
-BOOL	midiSongAddTimeSig(_MIDI_FILE *_pMF, int iTrack, int iNom, int iDenom, int iClockInMetroTick, int iNotated32nds)
-{
-static BYTE tmp[] = {msgMetaEvent, metaTimeSig, 0x04, 0,0,0,0};
-
-	_VAR_CAST;
-	if (!IsFilePtrValid(pMF))				return FALSE;
-	if (!IsTrackValid(iTrack))				return FALSE;
-
-	tmp[3] = (BYTE)iNom;
-	tmp[4] = (BYTE)(MIDI_NOTE_MINIM/iDenom);
-	tmp[5] = (BYTE)iClockInMetroTick;
-	tmp[6] = (BYTE)iNotated32nds;
-	return midiTrackAddRaw(pMF, iTrack, sizeof(tmp), tmp, FALSE, 0);
-}
-
-BOOL	midiSongAddKeySig(_MIDI_FILE *_pMF, int iTrack, tMIDI_KEYSIG iKey)
-{
-static BYTE tmp[] = {msgMetaEvent, metaKeySig, 0x02, 0, 0};
-
-	_VAR_CAST;
-	if (!IsFilePtrValid(pMF))				return FALSE;
-	if (!IsTrackValid(iTrack))				return FALSE;
-
-	tmp[3] = (BYTE)((iKey&keyMaskKey)*((iKey&keyMaskNeg)?-1:1));
-	tmp[4] = (BYTE)((iKey&keyMaskMin)?1:0);
-	return midiTrackAddRaw(pMF, iTrack, sizeof(tmp), tmp, FALSE, 0);
-}
-
-BOOL	midiSongAddTempo(_MIDI_FILE *_pMF, int iTrack, int iTempo)
-{
-static BYTE tmp[] = {msgMetaEvent, metaSetTempo, 0x03, 0,0,0};
-int us;	// micro-seconds per qn
-
-	_VAR_CAST;
-	if (!IsFilePtrValid(pMF))				return FALSE;
-	if (!IsTrackValid(iTrack))				return FALSE;
-
-	us = 60000000L/iTempo;
-	tmp[3] = (BYTE)((us>>16)&0xff);
-	tmp[4] = (BYTE)((us>>8)&0xff);
-	tmp[5] = (BYTE)((us>>0)&0xff);
-	return midiTrackAddRaw(pMF, iTrack, sizeof(tmp), tmp, FALSE, 0);
-}
-
-BOOL	midiSongAddMIDIPort(_MIDI_FILE *_pMF, int iTrack, int iPort)
-{
-static BYTE tmp[] = {msgMetaEvent, metaMIDIPort, 1, 0};
-
-	_VAR_CAST;
-	if (!IsFilePtrValid(pMF))				return FALSE;
-	if (!IsTrackValid(iTrack))				return FALSE;
-	tmp[3] = (BYTE)iPort;
-	return midiTrackAddRaw(pMF, iTrack, sizeof(tmp), tmp, FALSE, 0);
-}
-
-BOOL	midiSongAddEndSequence(_MIDI_FILE *_pMF, int iTrack)
-{
-static BYTE tmp[] = {msgMetaEvent, metaEndSequence, 0};
-
-	_VAR_CAST;
-	if (!IsFilePtrValid(pMF))				return FALSE;
-	if (!IsTrackValid(iTrack))				return FALSE;
-
-	return midiTrackAddRaw(pMF, iTrack, sizeof(tmp), tmp, FALSE, 0);
-}
-
-// midiTrack* Functions
-
-BOOL	midiTrackAddRaw(_MIDI_FILE *_pMF, int iTrack, int data_sz, const BYTE *pData, BOOL bMovePtr, int dt)
-{
-MIDI_FILE_TRACK *pTrk;
-BYTE *ptr;
-int dtime;
-
-	_VAR_CAST;
-	if (!IsFilePtrValid(pMF))			return FALSE;
-	if (!IsTrackValid(iTrack))			return FALSE;
-	
-	pTrk = &pMF->Track[iTrack];
-	ptr = _midiGetPtr(pMF, iTrack, data_sz+DT_DEF);
-	if (!ptr)
-		return FALSE;
-	
-	dtime = pTrk->dt;
-	if (bMovePtr)
-		dtime += dt;
-	
-	ptr = _midiWriteVarLen(ptr, dtime);
-	memcpy(ptr, pData, data_sz);
-	
-	pTrk->pos += dtime;
-	pTrk->dt = 0;
-	pTrk->ptr = ptr+data_sz;
-	
-	return TRUE;
-}
-
-
-BOOL	midiTrackIncTime(_MIDI_FILE *_pMF, int iTrack, int iDeltaTime, BOOL bOverridePPQN)
-{
-DWORD will_end_at;
-
-	_VAR_CAST;
-	if (!IsFilePtrValid(pMF))				return FALSE;
-	if (!IsTrackValid(iTrack))				return FALSE;
-	
-	will_end_at = _midiGetLength(pMF->Header.PPQN, iDeltaTime, bOverridePPQN);
-	will_end_at += pMF->Track[iTrack].pos + pMF->Track[iTrack].dt;
-	
-	midiFileFlushTrack(pMF, iTrack, FALSE, will_end_at);
-	
-	return TRUE;
-}
-
-BOOL	midiTrackAddText(_MIDI_FILE *_pMF, int iTrack, tMIDI_TEXT iType, const char *pTxt)
-{
-BYTE *ptr;
-int sz;
-
-	_VAR_CAST;
-	if (!IsFilePtrValid(pMF))				return FALSE;
-	if (!IsTrackValid(iTrack))				return FALSE;
-
-	sz = strlen(pTxt);
-	if ((ptr = _midiGetPtr(pMF, iTrack, sz+DT_DEF)))
-		{
-		*ptr++ = 0;		// delta-time=0
-		*ptr++ = msgMetaEvent;
-		*ptr++ = (BYTE)iType;
-		ptr = _midiWriteVarLen((BYTE *)ptr, sz);
-		strcpy((char *)ptr, pTxt);
-		pMF->Track[iTrack].ptr = ptr+sz;
-		return TRUE;
-		}
-	else		 
-		{
-		return FALSE;
-		}
-}
-
-BOOL	midiTrackSetKeyPressure(_MIDI_FILE *pMF, int iTrack, int iNote, int iAftertouch)
-{
-	return midiTrackAddMsg(pMF, iTrack, msgNoteKeyPressure, iNote, iAftertouch);
-}
-
-BOOL	midiTrackAddControlChange(_MIDI_FILE *pMF, int iTrack, tMIDI_CC iCCType, int iParam)
-{
-	return midiTrackAddMsg(pMF, iTrack, msgControlChange, iCCType, iParam);
-}
-
-BOOL	midiTrackAddProgramChange(_MIDI_FILE *pMF, int iTrack, int iInstrPatch)
-{
-	return midiTrackAddMsg(pMF, iTrack, msgSetProgram, iInstrPatch, 0);
-}
-
-BOOL	midiTrackChangeKeyPressure(_MIDI_FILE *pMF, int iTrack, int iDeltaPressure)
-{
-	return midiTrackAddMsg(pMF, iTrack, msgChangePressure, iDeltaPressure&0x7f, 0);
-}
-
-BOOL	midiTrackSetPitchWheel(_MIDI_FILE *pMF, int iTrack, int iWheelPos)
-{
-WORD wheel = (WORD)iWheelPos;
-
-	// bitshift 7 instead of eight because we're dealing with 7 bit numbers
-	wheel += MIDI_WHEEL_CENTRE;
-	return midiTrackAddMsg(pMF, iTrack, msgSetPitchWheel, wheel&0x7f, (wheel>>7)&0x7f);
-}
-
-BOOL	midiTrackAddMsg(_MIDI_FILE *_pMF, int iTrack, tMIDI_MSG iMsg, int iParam1, int iParam2)
-{
-BYTE *ptr;
-BYTE data[3];
-int sz;
-
-	_VAR_CAST;
-	if (!IsFilePtrValid(pMF))				return FALSE;
-	if (!IsTrackValid(iTrack))				return FALSE;
-	if (!IsMessageValid(iMsg))				return FALSE;
-
-	ptr = _midiGetPtr(pMF, iTrack, DT_DEF);
-	if (!ptr)
-		return FALSE;
-	
-	data[0] = (BYTE)(iMsg | pMF->Track[iTrack].iDefaultChannel);
-	data[1] = (BYTE)(iParam1 & 0x7f); 
-	data[2] = (BYTE)(iParam2 & 0x7f); 
-
-	// Is this msg a single, or double BYTE, prm?
-
- 	switch(iMsg)
-		{
-		case	msgSetProgram:			// only one byte required for these msgs
-		case	msgChangePressure:
-									sz = 2;
-									break;
-
-		default:						// double byte messages
-									sz = 3;
-									break;
-		}
-	
-	return midiTrackAddRaw(pMF, iTrack, sz, data, FALSE, 0);
-
-}
-
-BOOL	midiTrackAddNote(_MIDI_FILE *_pMF, int iTrack, int iNote, int iLength, int iVol, BOOL bAutoInc, BOOL bOverrideLength)
-{
-MIDI_FILE_TRACK *pTrk;
-BYTE *ptr;
-BOOL bSuccess = FALSE;
-int i, chn;
-
-	_VAR_CAST;
-	if (!IsFilePtrValid(pMF))				return FALSE;
-	if (!IsTrackValid(iTrack))				return FALSE;
-	if (!IsNoteValid(iNote))				return FALSE;
-	
-	pTrk = &pMF->Track[iTrack];
-	ptr = _midiGetPtr(pMF, iTrack, DT_DEF);
-	if (!ptr)
-		return FALSE;
-	
-	chn = pTrk->iDefaultChannel;
-	iLength = _midiGetLength(pMF->Header.PPQN, iLength, bOverrideLength);
-	
-	for(i=0;i<sizeof(pTrk->LastNote)/sizeof(pTrk->LastNote[0]);++i)
-		if (pTrk->LastNote[i].valid == FALSE)
-			{
-			pTrk->LastNote[i].note = (BYTE)iNote;
-			pTrk->LastNote[i].chn = (BYTE)chn;
-			pTrk->LastNote[i].end_pos = pTrk->pos+pTrk->dt+iLength;
-			pTrk->LastNote[i].valid = TRUE;
-			bSuccess = TRUE;
-			
-			ptr = _midiWriteVarLen(ptr, pTrk->dt);		// delta-time
-			*ptr++ = (BYTE)(msgNoteOn | chn);
-			*ptr++ = (BYTE)iNote;
-			*ptr++ = (BYTE)iVol;
-			break;
-			}
-	
-	if (!bSuccess)
-		return FALSE;
-	
-	pTrk->ptr = ptr;
-	
-	pTrk->pos += pTrk->dt;
-	pTrk->dt = 0;
-	
-	if (bAutoInc)
-		return midiTrackIncTime(pMF, iTrack, iLength, bOverrideLength);
-	
-	return TRUE;
-}
-
-BOOL	midiTrackAddRest(_MIDI_FILE *_pMF, int iTrack, int iLength, BOOL bOverridePPQN)
-{
-	_VAR_CAST;
-	if (!IsFilePtrValid(pMF))				return FALSE;
-	if (!IsTrackValid(iTrack))				return FALSE;
-
-	iLength = _midiGetLength(pMF->Header.PPQN, iLength, bOverridePPQN);
-	return midiTrackIncTime(pMF, iTrack, iLength, bOverridePPQN);
-}
-
-int		midiTrackGetEndPos(_MIDI_FILE *_pMF, int iTrack)
-{
-	_VAR_CAST;
-	if (!IsFilePtrValid(pMF))				return FALSE;
-	if (!IsTrackValid(iTrack))				return FALSE;
-
-	return pMF->Track[iTrack].pos;
-}
-*/
-
-/*
-** midiRead* Functions
-*/
-static BYTE *_midiReadVarLen(BYTE *ptr, DWORD *num)
-{
-	register DWORD value;
-	register BYTE c;
-
-    if ((value = *ptr++) & 0x80)
-	{
-		value &= 0x7f;
-		do
-		{
-			value = (value << 7) + ((c = *ptr++) & 0x7f);
-		} while (c & 0x80);
-	}
-	*num = value;
-	return(ptr);
-}
 
 
 static DWORD _midiReadVarLen2(DWORD ptr2, DWORD *num)
@@ -967,36 +522,14 @@ static DWORD _midiReadVarLen2(DWORD ptr2, DWORD *num)
 	return ptr2;
 }
 
-
-/*
-static BOOL _midiReadTrackCopyData(MIDI_MSG *pMsg, BYTE *ptr, DWORD sz, BOOL bCopyPtrData)
+static BOOL _midiReadTrackCopyData2(MIDI_MSG *pMsg, DWORD ptr2, DWORD sz, BOOL bCopyPtrData)
 {
 	if (sz > pMsg->data_sz)
 	{
-		pMsg->data = (BYTE *)realloc(pMsg->data, sz); // also acts as malloc. can be tolerated since it only allocs a few bytes
-		pMsg->data_sz = sz;
-	}
-	
-	if (!pMsg->data)
-		return FALSE;
-	
-	if (bCopyPtrData && ptr)
-		memcpy(pMsg->data, ptr, sz);
-	
-	return TRUE;
-}
-*/
-
-static BOOL _midiReadTrackCopyData2(MIDI_MSG *pMsg, DWORD ptr2, DWORD sz, BOOL bCopyPtrData)
-{
-	if (sz > sizeof(pMsg->data))
-	{
 		printf("sz was bigger: %d > %d\r\n", sz, sizeof(pMsg->data));
 
-		//pMsg->data = (BYTE *)realloc(pMsg->data, sz); // also acts as malloc. can be tolerated since it only allocs a few bytes
-
-		//pMsg->data_sz = sz;
-		pMsg->data_sz = sizeof(pMsg->data);
+		pMsg->data = (BYTE *)realloc(pMsg->data, sz); // also acts as malloc. can be tolerated since it only allocs a few bytes
+		pMsg->data_sz = sz;
 	}
 
 	if (!pMsg->data)
@@ -1004,7 +537,6 @@ static BOOL _midiReadTrackCopyData2(MIDI_MSG *pMsg, DWORD ptr2, DWORD sz, BOOL b
 
 	if (bCopyPtrData && read_byte_value_from_pos(ptr2))
 		read_mem_from_pos(pMsg->data, ptr2, sz);
-		//memcpy(pMsg->data, ptr, sz);
 
 	return TRUE;
 }
@@ -1014,6 +546,7 @@ int midiReadGetNumTracks(const _MIDI_FILE *_pMF)
 	_VAR_CAST;
 	return pMF->Header.iNumTracks;
 }
+
 
 BOOL midiReadGetNextMessage(const _MIDI_FILE *_pMF, int iTrack, MIDI_MSG *pMsg)
 {
@@ -1037,7 +570,6 @@ BOOL midiReadGetNextMessage(const _MIDI_FILE *_pMF, int iTrack, MIDI_MSG *pMsg)
 		return FALSE;
 	
 	pTrack->ptr2 = _midiReadVarLen2(pTrack->ptr2, &pMsg->dt);
-
 	pTrack->pos += pMsg->dt;
 	pMsg->dwAbsPos = pTrack->pos;
 

@@ -1,31 +1,30 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <history>
-   <processor signature="4.6.2 -mcpu=cortex-m3 -mthumb -g -nostartfiles -Map=sd_card_stm32vldiscovery.map -O0 --gc-sections -LC:\CooCox\CoIDE\configuration\ProgramData\sd_card_stm32vldiscovery -TC:\CooCox\CoIDE\configuration\ProgramData\sd_card_stm32vldiscovery/arm-gcc-link.ld -g">
-      <target file="sd_card_stm32vldiscovery.elf" lastModified="13fb81581c0">
-         <source file="..\obj\stm32f10x_rtc.o" lastModified="13fb800f272"/>
-         <source file="..\obj\midifile.o" lastModified="13fb8157ef1"/>
-         <source file="..\obj\unicode.o" lastModified="13fb800f570"/>
-         <source file="..\obj\startup_stm32f10x_md_vl.o" lastModified="13fb800f5ed"/>
-         <source file="..\obj\core_cm3.o" lastModified="13fb800f698"/>
-         <source file="..\obj\STM32_Discovery.o" lastModified="13fb800f764"/>
-         <source file="..\obj\system_stm32f10x.o" lastModified="13fb800f82f"/>
-         <source file="..\obj\uart.o" lastModified="13fb800f8bb"/>
-         <source file="..\obj\stm32f10x_pwr.o" lastModified="13fb800f958"/>
-         <source file="..\obj\stm32f10x_gpio.o" lastModified="13fb800fa13"/>
-         <source file="..\obj\main.o" lastModified="13fb813fb8e"/>
-         <source file="..\obj\printf.o" lastModified="13fb8010108"/>
-         <source file="..\obj\stm32f10x_rcc.o" lastModified="13fb80101f3"/>
-         <source file="..\obj\stm32f10x_usart.o" lastModified="13fb80102cd"/>
-         <source file="..\obj\syscall.o" lastModified="13fb801031c"/>
-         <source file="..\obj\syscalls.o" lastModified="13fb8010399"/>
-         <source file="..\obj\midiutil.o" lastModified="13fb8120dc7"/>
-         <source file="..\obj\stm32f10x_it.o" lastModified="13fb801051f"/>
-         <source file="..\obj\debug.o" lastModified="13fb801057d"/>
-         <source file="..\obj\ff.o" lastModified="13fb80107ee"/>
-         <source file="..\obj\stm32f10x_spi.o" lastModified="13fb80108b9"/>
-         <source file="..\obj\fattime.o" lastModified="13fb80108f8"/>
-         <source file="..\obj\sd_spi_stm32.o" lastModified="13fb8010a01"/>
-         <source file="..\obj\stm32f10x_bkp.o" lastModified="13fb8010a9d"/>
+   <processor signature="4.6.2 -mcpu=cortex-m3 -mthumb -Wl -nostartfiles -g -Map=sd_card_stm32vldiscovery.map -O0 --gc-sections -LF:\CooCox\CoIDE\configuration\ProgramData\sd_card_stm32vldiscovery -TF:\CooCox\CoIDE\configuration\ProgramData\sd_card_stm32vldiscovery/arm-gcc-link.ld -g">
+      <target file="sd_card_stm32vldiscovery.elf" lastModified="13fc49130e9">
+         <source file="..\obj\stm32f10x_rtc.o" lastModified="13fc2699a92"/>
+         <source file="..\obj\midifile.o" lastModified="13fc4907cb9"/>
+         <source file="..\obj\unicode.o" lastModified="13fc2699f80"/>
+         <source file="..\obj\startup_stm32f10x_md_vl.o" lastModified="13fc4912c6d"/>
+         <source file="..\obj\core_cm3.o" lastModified="13fc269a0d6"/>
+         <source file="..\obj\system_stm32f10x.o" lastModified="13fc269a265"/>
+         <source file="..\obj\uart.o" lastModified="13fc48ae177"/>
+         <source file="..\obj\stm32f10x_pwr.o" lastModified="13fc269a500"/>
+         <source file="..\obj\stm32f10x_gpio.o" lastModified="13fc269a5da"/>
+         <source file="..\obj\main.o" lastModified="13fc48f8e59"/>
+         <source file="..\obj\printf.o" lastModified="13fc269a9ee"/>
+         <source file="..\obj\stm32f10x_rcc.o" lastModified="13fc269ab2d"/>
+         <source file="..\obj\stm32f10x_usart.o" lastModified="13fc269ac09"/>
+         <source file="..\obj\syscall.o" lastModified="13fc269ac91"/>
+         <source file="..\obj\syscalls.o" lastModified="13fc269ad42"/>
+         <source file="..\obj\midiutil.o" lastModified="13fc48f90ed"/>
+         <source file="..\obj\stm32f10x_it.o" lastModified="13fc269afd0"/>
+         <source file="..\obj\debug.o" lastModified="13fc269b0b0"/>
+         <source file="..\obj\ff.o" lastModified="13fc269b29a"/>
+         <source file="..\obj\stm32f10x_spi.o" lastModified="13fc269b37f"/>
+         <source file="..\obj\fattime.o" lastModified="13fc269b41f"/>
+         <source file="..\obj\sd_spi_stm32.o" lastModified="13fc269b58d"/>
+         <source file="..\obj\stm32f10x_bkp.o" lastModified="13fc269b659"/>
       </target>
    </processor>
 </history>

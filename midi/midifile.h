@@ -51,12 +51,13 @@ typedef int					BOOL;
 #endif
 
 
-void read_mem_from_pos(void* dst, DWORD pos, DWORD length);
-void read_string_from_pos_s(void* dst, DWORD pos, DWORD max_length);
-DWORD read_dword_value_from_pos(DWORD pos);
-WORD read_word_value_from_pos(DWORD pos);
-BYTE read_byte_value_from_pos(DWORD pos);
+static void read_mem_from_pos(void* dst, DWORD pos, DWORD length);
+static void read_string_from_pos_s(void* dst, DWORD pos, DWORD max_length);
+static DWORD read_dword_value_from_pos(DWORD pos);
+static WORD read_word_value_from_pos(DWORD pos);
+static BYTE read_byte_value_from_pos(DWORD pos);
 
+void mount_sd_card();
 
 
 
@@ -146,7 +147,8 @@ typedef struct {
 					tMIDI_MSG	iImpliedMsg;
 
 					/* Raw data chunk */
-					BYTE data[32];		/* data block */ // delete
+					//BYTE data[128];		/* data block */
+					BYTE* data;		/* data block */
 					DWORD data_sz;
 					
 					union {
@@ -226,16 +228,16 @@ typedef struct {
 ** midiFile* Prototypes
 */
 // _MIDI_FILE  *midiFileCreate(const char *pFilename, BOOL bOverwriteIfExists);
-int			midiFileSetTracksDefaultChannel(_MIDI_FILE *pMF, int iTrack, int iChannel);
-int			midiFileGetTracksDefaultChannel(const _MIDI_FILE *pMF, int iTrack);
+static  int			midiFileSetTracksDefaultChannel(_MIDI_FILE *pMF, int iTrack, int iChannel);
+static int			midiFileGetTracksDefaultChannel(const _MIDI_FILE *pMF, int iTrack);
 BOOL		midiFileFlushTrack(_MIDI_FILE *pMF, int iTrack, BOOL bFlushToEnd, DWORD dwEndTimePos);
-BOOL		midiFileSyncTracks(_MIDI_FILE *pMF, int iTrack1, int iTrack2);
-int			midiFileSetPPQN(_MIDI_FILE *pMF, int PPQN);
-int			midiFileGetPPQN(const _MIDI_FILE *pMF);
-int			midiFileSetVersion(_MIDI_FILE *pMF, int iVersion);
-int			midiFileGetVersion(const _MIDI_FILE *pMF);
-void 		midiFileOpen( FIL* fil, _MIDI_FILE* pMF, const char *pFilename, BOOL* open_success );
-BOOL		midiFileClose(_MIDI_FILE *pMF);
+static  BOOL		midiFileSyncTracks(_MIDI_FILE *pMF, int iTrack1, int iTrack2);
+static  int			midiFileSetPPQN(_MIDI_FILE *pMF, int PPQN);
+static  int			midiFileGetPPQN(const _MIDI_FILE *pMF);
+static  int			midiFileSetVersion(_MIDI_FILE *pMF, int iVersion);
+static  int			midiFileGetVersion(const _MIDI_FILE *pMF);
+void 		midiFileOpen( _MIDI_FILE* pMF, const char *pFilename, BOOL* open_success );
+static BOOL		midiFileClose(_MIDI_FILE *pMF);
 
 /*
 ** midiSong* Prototypes
