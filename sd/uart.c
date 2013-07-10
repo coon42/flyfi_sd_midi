@@ -29,6 +29,7 @@
 void InitializeUart(uint32_t baud_rate) {
 	USART_InitTypeDef USART_InitStructure;
 	GPIO_InitTypeDef GPIO_InitStructure;
+	RCC_ClocksTypeDef RCC_ClockFreq;
 
 	// Configure peripherals used - enable their clocks
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1 | RCC_APB2Periph_GPIOA, ENABLE);
@@ -51,6 +52,17 @@ void InitializeUart(uint32_t baud_rate) {
     // Configure and enable UARTx
     USART_Init(UARTx, &USART_InitStructure);
     USART_Cmd(UARTx, ENABLE);
+
+
+    printf("UART test " __DATE__ "\r\n");
+	RCC_GetClocksFreq(&RCC_ClockFreq);
+	printf("SYSCLK = %d Mhz  HCLK = %d Mhz PCLK1 = %d Mhz PCLK2 = %d Mhz ADCCLK = %d Mhz\r\n", 
+												RCC_ClockFreq.SYSCLK_Frequency / (1000 * 1000),
+												RCC_ClockFreq.HCLK_Frequency / (1000 * 1000),
+												RCC_ClockFreq.PCLK1_Frequency / (1000 * 1000),
+												RCC_ClockFreq.PCLK2_Frequency / (1000 * 1000),
+												RCC_ClockFreq.ADCCLK_Frequency / (1000 * 1000)
+												);
 }
 
 unsigned char USART_getc(USART_TypeDef* USARTx)
@@ -77,7 +89,7 @@ int fputc(int ch, FILE * f)
 }
 
 // receives an 32 bit integer from serial port. (little endian)
-uint32_t USART_recv_dword(USART_TypeDef* USARTx)
+uint32_t USART1_recv_dword()
 {
 	uint32_t i, result = 0;
 	for(i = 0; i < 4; i++)

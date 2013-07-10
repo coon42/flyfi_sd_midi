@@ -6,7 +6,7 @@
       <Compile>
         <Option name="OptimizationLevel" value="0"/>
         <Option name="UseFPU" value="0"/>
-        <Option name="UserEditCompiler" value=""/>
+        <Option name="UserEditCompiler" value="-std=c99"/>
         <Includepaths>
           <Includepath path="."/>
         </Includepaths>
@@ -22,6 +22,7 @@
         <Option name="UseCLib" value="0"/>
         <Option name="UserEditLinkder" value=""/>
         <Option name="UseMemoryLayout" value="1"/>
+        <Option name="UserEditLinker" value=""/>
         <LinkedLibraries/>
         <MemoryAreas debugInFlashNotRAM="1">
           <Memory name="IROM1" type="ReadOnly" size="0x00020000" startValue="0x08000000"/>
@@ -74,61 +75,71 @@
     <Component id="444" name="GPIO" path="" type="2"/>
     <Component id="448" name="RTC" path="" type="2"/>
     <Component id="452" name="SPI" path="" type="2"/>
+    <Component id="456" name="TIM" path="" type="2"/>
     <Component id="458" name="USART" path="" type="2"/>
     <Component id="464" name="CMSIS Boot" path="" type="2"/>
+    <Component id="467" name="MISC" path="" type="2"/>
   </Components>
   <Files>
     <File name="cmsis_boot/startup/startup_stm32f10x_md_vl.c" path="cmsis_boot/startup/startup_stm32f10x_md_vl.c" type="1"/>
-    <File name="midi" path="" type="2"/>
-    <File name="midi/midiutil.h" path="midi/midiutil.h" type="1"/>
     <File name="sd/fattime.c" path="sd/fattime.c" type="1"/>
     <File name="sd/ff.h" path="sd/ff.h" type="1"/>
-    <File name="midi/midifile.h" path="midi/midifile.h" type="1"/>
+    <File name="stm_lib/inc/stm32f10x_tim.h" path="stm_lib/inc/stm32f10x_tim.h" type="1"/>
     <File name="cmsis_boot" path="" type="2"/>
     <File name="stm_lib/inc/stm32f10x_pwr.h" path="stm_lib/inc/stm32f10x_pwr.h" type="1"/>
+    <File name="stm_lib/src/stm32f10x_tim.c" path="stm_lib/src/stm32f10x_tim.c" type="1"/>
     <File name="cmsis_boot/startup" path="" type="2"/>
+    <File name="uart.c" path="sd/uart.c" type="1"/>
+    <File name="stm_lib/src/misc.c" path="stm_lib/src/misc.c" type="1"/>
+    <File name="midifile" path="" type="2"/>
+    <File name="MoppyEx/MoppyEx_conf.h" path="moppy_ex/MoppyEx_conf.h" type="1"/>
     <File name="stm_lib/src/stm32f10x_spi.c" path="stm_lib/src/stm32f10x_spi.c" type="1"/>
     <File name="cmsis_boot/stm32f10x.h" path="cmsis_boot/stm32f10x.h" type="1"/>
+    <File name="MoppyEx/MoppyEx.c" path="moppy_ex/MoppyEx.c" type="1"/>
     <File name="cmsis_boot/stm32f10x_conf.h" path="cmsis_boot/stm32f10x_conf.h" type="1"/>
     <File name="syscalls/syscalls.c" path="syscalls/syscalls.c" type="1"/>
     <File name="cmsis/core_cm3.c" path="cmsis/core_cm3.c" type="1"/>
     <File name="stm_lib/inc/stm32f10x_spi.h" path="stm_lib/inc/stm32f10x_spi.h" type="1"/>
     <File name="sd/debug.c" path="sd/debug.c" type="1"/>
     <File name="sd/option/unicode.c" path="sd/option/unicode.c" type="1"/>
-    <File name="midi/midifile.c" path="midi/midifile.c" type="1"/>
+    <File name="MoppyEx/MoppyEx.h" path="moppy_ex/MoppyEx.h" type="1"/>
     <File name="stm_lib/src/stm32f10x_usart.c" path="stm_lib/src/stm32f10x_usart.c" type="1"/>
     <File name="stm_lib/inc/stm32f10x_rtc.h" path="stm_lib/inc/stm32f10x_rtc.h" type="1"/>
+    <File name="uart.h" path="sd/uart.h" type="1"/>
     <File name="sd/option/syscall.c" path="sd/option/syscall.c" type="1"/>
+    <File name="midifile/midiinfo.h" path="midi/midiinfo.h" type="1"/>
     <File name="stdio/printf.c" path="stdio/printf.c" type="1"/>
     <File name="stm_lib/src/stm32f10x_bkp.c" path="stm_lib/src/stm32f10x_bkp.c" type="1"/>
     <File name="stm_lib/src/stm32f10x_pwr.c" path="stm_lib/src/stm32f10x_pwr.c" type="1"/>
     <File name="stm_lib/src/stm32f10x_gpio.c" path="stm_lib/src/stm32f10x_gpio.c" type="1"/>
     <File name="stm_lib/inc/stm32f10x_gpio.h" path="stm_lib/inc/stm32f10x_gpio.h" type="1"/>
+    <File name="midifile/midifile.h" path="midi/midifile.h" type="1"/>
     <File name="stm_lib/inc/stm32f10x_usart.h" path="stm_lib/inc/stm32f10x_usart.h" type="1"/>
     <File name="sd/fattime.h" path="sd/fattime.h" type="1"/>
     <File name="sd/stm32f10x_it.h" path="sd/stm32f10x_it.h" type="1"/>
     <File name="cmsis_boot/system_stm32f10x.c" path="cmsis_boot/system_stm32f10x.c" type="1"/>
+    <File name="stm_lib/inc/misc.h" path="stm_lib/inc/misc.h" type="1"/>
     <File name="stdio" path="" type="2"/>
+    <File name="midifile/midiutil.c" path="midi/midiutil.c" type="1"/>
     <File name="sd/debug.h" path="sd/debug.h" type="1"/>
     <File name="cmsis/core_cm3.h" path="cmsis/core_cm3.h" type="1"/>
     <File name="sd/ffconf.h" path="sd/ffconf.h" type="1"/>
     <File name="stm_lib/src/stm32f10x_rcc.c" path="stm_lib/src/stm32f10x_rcc.c" type="1"/>
     <File name="sd" path="" type="2"/>
     <File name="stm_lib/inc/stm32f10x_bkp.h" path="stm_lib/inc/stm32f10x_bkp.h" type="1"/>
-    <File name="sd/uart.h" path="sd/uart.h" type="1"/>
-    <File name="midi/midiinfo.h" path="midi/midiinfo.h" type="1"/>
-    <File name="sd/ff.c" path="sd/ff.c" type="1"/>
     <File name="sd/sd_spi_stm32.c" path="sd/sd_spi_stm32.c" type="1"/>
+    <File name="sd/ff.c" path="sd/ff.c" type="1"/>
+    <File name="midifile/midifile.c" path="midi/midifile.c" type="1"/>
     <File name="stm_lib/src" path="" type="2"/>
     <File name="cmsis" path="" type="2"/>
     <File name="stm_lib" path="" type="2"/>
-    <File name="sd/uart.c" path="sd/uart.c" type="1"/>
+    <File name="MoppyEx" path="" type="2"/>
     <File name="cmsis_boot/system_stm32f10x.h" path="cmsis_boot/system_stm32f10x.h" type="1"/>
-    <File name="sd/stm32f10x_it.c" path="sd/stm32f10x_it.c" type="1"/>
+    <File name="midifile/midiutil.h" path="midi/midiutil.h" type="1"/>
     <File name="sd/option" path="" type="2"/>
+    <File name="sd/stm32f10x_it.c" path="sd/stm32f10x_it.c" type="1"/>
     <File name="stm_lib/inc/stm32f10x_rcc.h" path="stm_lib/inc/stm32f10x_rcc.h" type="1"/>
     <File name="syscalls" path="" type="2"/>
-    <File name="midi/midiutil.c" path="midi/midiutil.c" type="1"/>
     <File name="sd/integer.h" path="sd/integer.h" type="1"/>
     <File name="sd/diskio.h" path="sd/diskio.h" type="1"/>
     <File name="stm_lib/inc" path="" type="2"/>

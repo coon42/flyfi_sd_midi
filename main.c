@@ -35,8 +35,49 @@
 #include "stm32f10x.h"
 #include "uart.h"
 #include "midifile.h"
+#include "MoppyEx.h"
 
 
+//***********************************************************************************************
+// System-Einstellungen
+//***********************************************************************************************
+
+
+void SetupSystem (void)
+{
+	SystemCoreClockUpdate();
+	InitializeUart(115200);
+	//InitializeUart(921600);
+
+
+	GPIO_InitTypeDef GPIO_InitStructure;
+	uint32_t i, j;
+
+	// Output SYSCLK clock on MCO pin
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
+
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_Init(GPIOA, &GPIO_InitStructure);
+	RCC_MCOConfig(RCC_MCO_SYSCLK);
+
+	GPIO_WriteBit(GPIOA, GPIO_Pin_0, Bit_SET);
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+	GPIO_Init(GPIOA, &GPIO_InitStructure);
+
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO | RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOC, ENABLE);
+
+
+	if (SysTick_Config(SystemCoreClock / 1000)) {
+		printf("Systick failed, system halted\n");
+		while (1);
+	}
+
+	mount_sd_card();
+	SetupMoppyEx();
+}
 
 
 void playMidiFile(const char *pFilename)
@@ -78,12 +119,11 @@ void playMidiFile(const char *pFilename)
 					else
 					{ ev = msg.iType; }
 
-
-					printf(" %d ", msg.dwAbsPos);
+					printf(" %06d ", msg.dwAbsPos);
 
 
 					if (muGetMIDIMsgName(str, ev))
-						printf("%s", str);
+						printf("%s  ", str);
 
 					switch(ev)
 					{
@@ -93,7 +133,26 @@ void playMidiFile(const char *pFilename)
 						break;
 					case	msgNoteOn:
 						muGetNameFromNote(str, msg.MsgData.NoteOn.iNote);
-						printf("(%d) %s %d", msg.MsgData.NoteOn.iChannel, str, msg.MsgData.NoteOn.iVolume);
+						printf("  (%d) %s %d", msg.MsgData.NoteOn.iChannel, str, msg.MsgData.NoteOn.iVolume);
+						break;
+					case	msgNoteKeyPressure:
+						muGetNameFromNote(str, msg.MsgData.NoteKeyPressure.iNote);
+						printf("(%d) %s %d", msg.MsgData.NoteKeyPressure.iChannel,
+							str,
+							msg.MsgData.NoteKeyPressure.iPressure);
+						break;
+					case	msgSetParameter:
+						muGetControlName(str, msg.MsgData.NoteParameter.iControl);
+						printf("(%d) %s -> %d", msg.MsgData.NoteParameter.iChannel,
+							str, msg.MsgData.NoteParameter.iParam);
+						break;
+					case	msgSetProgram:
+						muGetInstrumentName(str, msg.MsgData.ChangeProgram.iProgram);
+						printf("(%d) %s", msg.MsgData.ChangeProgram.iChannel, str);
+						break;
+					case	msgChangePressure:
+						muGetControlName(str, msg.MsgData.ChangePressure.iPressure);
+						printf("(%d) %s", msg.MsgData.ChangePressure.iChannel, str);
 						break;
 					case	msgSetPitchWheel:
 						printf("(%d) %d", msg.MsgData.PitchWheel.iChannel,
@@ -104,22 +163,91 @@ void playMidiFile(const char *pFilename)
 						printf("---- ");
 						switch(msg.MsgData.MetaEvent.iType)
 						{
+						case	metaMIDIPort:
+							printf("MIDI Port = %d", msg.MsgData.MetaEvent.Data.iMIDIPort);
+							break;
+
+						case	metaSequenceNumber:
+							printf("Sequence Number = %d",msg.MsgData.MetaEvent.Data.iSequenceNumber);
+							break;
+
+						case	metaTextEvent:
+							printf("Text = '%s'",msg.MsgData.MetaEvent.Data.Text.pData);
+							break;
+						case	metaCopyright:
+							printf("Copyright = '%s'",msg.MsgData.MetaEvent.Data.Text.pData);
+							break;
+						case	metaTrackName:
+							printf("Track name = '%s'",msg.MsgData.MetaEvent.Data.Text.pData);
+							break;
+						case	metaInstrument:
+							printf("Instrument = '%s'",msg.MsgData.MetaEvent.Data.Text.pData);
+							break;
 						case	metaLyric:
-							printf("Lyric = '%s'", msg.MsgData.MetaEvent.Data.Text.pData);
+							printf("Lyric = '%s'",msg.MsgData.MetaEvent.Data.Text.pData);
+							break;
+						case	metaMarker:
+							printf("Marker = '%s'",msg.MsgData.MetaEvent.Data.Text.pData);
+							break;
+						case	metaCuePoint:
+							printf("Cue point = '%s'",msg.MsgData.MetaEvent.Data.Text.pData);
+							break;
+						case	metaEndSequence:
+							printf("End Sequence");
 							break;
 						case	metaSetTempo:
-							printf("Tempo = %d", msg.MsgData.MetaEvent.Data.Tempo.iBPM);
+							printf("Tempo = %d",msg.MsgData.MetaEvent.Data.Tempo.iBPM);
+							break;
+						case	metaSMPTEOffset:
+							printf("SMPTE offset = %d:%d:%d.%d %d",
+								msg.MsgData.MetaEvent.Data.SMPTE.iHours,
+								msg.MsgData.MetaEvent.Data.SMPTE.iMins,
+								msg.MsgData.MetaEvent.Data.SMPTE.iSecs,
+								msg.MsgData.MetaEvent.Data.SMPTE.iFrames,
+								msg.MsgData.MetaEvent.Data.SMPTE.iFF
+								);
+							break;
+						case	metaTimeSig:
+							printf("Time sig = %d/%d",msg.MsgData.MetaEvent.Data.TimeSig.iNom,
+								msg.MsgData.MetaEvent.Data.TimeSig.iDenom/MIDI_NOTE_CROCHET);
+							break;
+						case	metaKeySig:
+							if (muGetKeySigName(str, msg.MsgData.MetaEvent.Data.KeySig.iKey))
+								printf("Key sig = %s", str);
+							break;
+
+						case	metaSequencerSpecific:
+							printf("Sequencer specific = ");
+							HexList(msg.MsgData.MetaEvent.Data.Sequencer.pData, msg.MsgData.MetaEvent.Data.Sequencer.iSize); // ok
+							printf("\r\n");
 							break;
 						}
 						break;
+
+					case	msgSysEx1:
+					case	msgSysEx2:
+						printf("Sysex = ");
+						HexList(msg.MsgData.SysEx.pData, msg.MsgData.SysEx.iSize); // ok
+						break;
 					}
 
-					printf("\r\n");
+					if (ev == msgSysEx1 || ev == msgSysEx1 || (ev==msgMetaEvent && msg.MsgData.MetaEvent.iType==metaSequencerSpecific))
+					{
+						/* Already done a hex dump */
+					}
+					else
+					{
+						printf("  [");
+						if (msg.bImpliedMsg) printf("%X!", msg.iImpliedMsg);
+						for(j=0;j<msg.iMsgSize;j++)
+							printf("%X ", msg.data[j]);
+						printf("]\r\n");
+					}
 				}
 			}
 		}
 
-		//midiReadFreeMessage(&msg);
+		midiReadFreeMessage(&msg);
 	}
 	else
 	{
@@ -145,48 +273,7 @@ void playMidiFile(const char *pFilename)
 // Local functions
 
 int main(void) {
-	GPIO_InitTypeDef GPIO_InitStructure;
-    uint32_t i, j;
-
-	// Output SYSCLK clock on MCO pin
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
-
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_Init(GPIOA, &GPIO_InitStructure);
-	RCC_MCOConfig(RCC_MCO_SYSCLK);
-
-
-	//
-	// Configure debug trigger as output (GPIOA pin 0)
-	//
-
-    GPIO_WriteBit(GPIOA, GPIO_Pin_0, Bit_SET);
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-	GPIO_Init(GPIOA, &GPIO_InitStructure);
-
-
-	//
-	// Configure peripherals used - basically enable their clocks to enable them
-	//
-
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO | RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOC, ENABLE);
-
-    //
-    // Configure LEDs - we use them as an indicator the platform is alive somehow
-    //
-
-    InitializeUart(115200);
-
-
-	if (SysTick_Config(SystemCoreClock / 1000)) {
-        printf("Systick failed, system halted\n");
-		while (1);
-	}
-
-	mount_sd_card();
+	SetupSystem();        // System-Einstellungen
 
 
 	playMidiFile("overworld_deep3.mid");

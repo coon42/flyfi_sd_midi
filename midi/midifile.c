@@ -37,7 +37,7 @@ static FATFS Fatfs[1];		/* File system object for each logical drive */
 static DWORD acc_size;
 static WORD acc_files, acc_dirs;
 static FILINFO Finfo;
-static BYTE Buff[1 * 512] __attribute__ ((aligned (4))) ;		/* Working buffer */
+static BYTE path_buffer[1 * 256] __attribute__ ((aligned (4))) ; /* Working buffer for sd card directory listing */
 static char Lfname[128];
 
 
@@ -75,8 +75,8 @@ static BYTE read_byte_value_from_pos(DWORD pos)
 
 static void read_string_from_pos_s(void* dst, DWORD pos, DWORD max_length)
 {
-	read_mem_from_pos(dst, pos, max_length - 1);
-	((BYTE*)dst)[max_length] = '\0'; // if the input sting is too long, just cut it.
+	read_mem_from_pos(dst, pos, max_length - 2);
+	((BYTE*)dst)[max_length - 1] = '\0'; // if the input sting is too long, just cut it.
 }
 
 
@@ -257,17 +257,18 @@ static int			midiFileGetVersion(const _MIDI_FILE *_pMF)
 //--- Helpers for FAT support
 //
 
+char const status_sd_card[] =
+		"OK\0" "NOT_READY\0" "NO_FILE\0" "FR_NO_PATH\0" "INVALID_NAME\0" "INVALID_DRIVE\0"
+		"DENIED\0" "EXIST\0" "RW_ERROR\0" "WRITE_PROTECTED\0" "NOT_ENABLED\0"
+		"NO_FILESYSTEM\0" "INVALID_OBJECT\0" "MKFS_ABORTED\0";
+
 static
 void put_rc (FRESULT rc)
 {
 	const char *p;
-	static const char str[] =
-		"OK\0" "NOT_READY\0" "NO_FILE\0" "FR_NO_PATH\0" "INVALID_NAME\0" "INVALID_DRIVE\0"
-		"DENIED\0" "EXIST\0" "RW_ERROR\0" "WRITE_PROTECTED\0" "NOT_ENABLED\0"
-		"NO_FILESYSTEM\0" "INVALID_OBJECT\0" "MKFS_ABORTED\0";
 	FRESULT i;
 
-	for (p = str, i = 0; i != rc && *p; i++) {
+	for (p = status_sd_card, i = 0; i != rc && *p; i++) {
 		while(*p++);
 	}
 	printf("rc=%u FR_%s\n", (UINT)rc, p);
@@ -350,9 +351,9 @@ void mount_sd_card()
 	if(res) {
 		put_rc(res);
 	} else {
-		printf("FAT type = %d (%s)\nBytes/Cluster = %d\nNumber of FATs = %d\n"
-				"Root DIR entries = %d\nSectors/FAT = %d\nNumber of clusters = %d\n"
-				"FAT start (lba) = %d\nDIR start (lba,clustor) = %d\nData start (lba) = %d\n\n",
+		printf("FAT type = %d (%s)\r\nBytes/Cluster = %d\nNumber of FATs = %d\r\n"
+				"Root DIR entries = %d\r\nSectors/FAT = %d\r\nNumber of clusters = %d\r\n"
+				"FAT start (lba) = %d\r\nDIR start (lba,clustor) = %d\r\nData start (lba) = %d\r\n\r\n",
 				(WORD)fs->fs_type,
 				(fs->fs_type==FS_FAT12) ? "FAT12" : (fs->fs_type==FS_FAT16) ? "FAT16" : "FAT32",
 				(DWORD)fs->csize * 512, (WORD)fs->n_fats,
@@ -372,13 +373,13 @@ void mount_sd_card()
 	Finfo.lfsize = sizeof(Lfname);
 #endif
 
-	Buff[0] = 0;
-	res = scan_files(Buff);
+	path_buffer[0] = 0;
+	res = scan_files(path_buffer);
 	if(res) {
 		put_rc(res);
 	} else {
-		printf("%d files, %d bytes.\n%d folders.\n"
-				"%d MB total disk space.\n%d MB available.\n",
+		printf("%d files, %d bytes.\r\n%d folders.\r\n"
+				"%d MB total disk space.\n%d MB available.\r\n",
 				acc_files, acc_size, acc_dirs,
 				(fs->n_fatent - 2) * (fs->csize / 2) / 1024, p * (fs->csize / 2) / 1024
 
@@ -493,7 +494,7 @@ static BOOL	midiFileClose(_MIDI_FILE *_pMF)
 
 
 	if (pMF->pFile)
-		return fclose(pMF->pFile)?FALSE:TRUE;
+		return f_close(pMF->pFile)?FALSE:TRUE;
 	free((void *)pMF);
 	return TRUE;
 }
@@ -526,7 +527,7 @@ static BOOL _midiReadTrackCopyData2(MIDI_MSG *pMsg, DWORD ptr2, DWORD sz, BOOL b
 {
 	if (sz > pMsg->data_sz)
 	{
-		printf("sz was bigger: %d > %d\r\n", sz, sizeof(pMsg->data));
+		printf("sz was bigger: %d > %d\r\n", sz, pMsg->data_sz);
 
 		pMsg->data = (BYTE *)realloc(pMsg->data, sz); // also acts as malloc. can be tolerated since it only allocs a few bytes
 		pMsg->data_sz = sz;
@@ -658,14 +659,16 @@ BOOL midiReadGetNextMessage(const _MIDI_FILE *_pMF, int iTrack, MIDI_MSG *pMsg)
 		** always have bit 7 set */
 		bptr2 = pTrack->ptr2;
 
+		bTmp[1] = read_byte_value_from_pos(pTrack->ptr2 + 1);
+		pMsg->MsgData.MetaEvent.iType = (tMIDI_META)bTmp[1];
+		pTrack->ptr2 = _midiReadVarLen2(pTrack->ptr2 + 2, &pMsg->iMsgSize);
+
 		bTmp[0] = read_byte_value_from_pos(pTrack->ptr2 + 0);
 		bTmp[1] = read_byte_value_from_pos(pTrack->ptr2 + 1);
 		bTmp[2] = read_byte_value_from_pos(pTrack->ptr2 + 2);
 		bTmp[3] = read_byte_value_from_pos(pTrack->ptr2 + 3);
 		bTmp[4] = read_byte_value_from_pos(pTrack->ptr2 + 4);
 
-		pMsg->MsgData.MetaEvent.iType = (tMIDI_META)bTmp[1];
-		pTrack->ptr2 = _midiReadVarLen2(pTrack->ptr2 + 2, &pMsg->iMsgSize);
 		sz = (pTrack->ptr2 - bptr2) + pMsg->iMsgSize;
 
 		if (_midiReadTrackCopyData2(pMsg, pTrack->ptr2, sz, FALSE) == FALSE)
@@ -788,14 +791,15 @@ BOOL midiReadGetNextMessage(const _MIDI_FILE *_pMF, int iTrack, MIDI_MSG *pMsg)
 }
 
 
+// ok
 void midiReadInitMessage(MIDI_MSG *pMsg)
 {
-//	pMsg->data = NULL;
-//	pMsg->data_sz = 0;
+	pMsg->data = NULL;
+	pMsg->data_sz = 0;
 	pMsg->bImpliedMsg = FALSE;
 }
 
-/*
+
 // ok!
 void midiReadFreeMessage(MIDI_MSG *pMsg)
 {
@@ -803,4 +807,4 @@ void midiReadFreeMessage(MIDI_MSG *pMsg)
 		free((void *)pMsg->data);
 	pMsg->data = NULL;
 }
-*/
+

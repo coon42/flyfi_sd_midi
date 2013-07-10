@@ -42,6 +42,8 @@
 #define CHORD_ADD_MAJ7TH	0x04000000
 
 
+void HexList(BYTE *pData, int iNumBytes);
+
 /*
 ** Name resolving prototypes
 */
